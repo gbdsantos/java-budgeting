@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
 import org.springframework.ai.openai.OpenAiAudioTranscriptionModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,10 +29,11 @@ public class OpenAiTranscriptionModelIT {
   public void should_containExpectedKeywords_when_audioFilesAreProcessed(String fileName, String expectedKeyword) {
     var recording = new ClassPathResource("audio/" + fileName);
 
-    var response = openAiAudioTranscriptionModel.call(recording);
+    var response = openAiAudioTranscriptionModel.call(new AudioTranscriptionPrompt(recording));
+    var transcription = response.getResult().getOutput();
 
-    assertThat(response).contains(expectedKeyword);
+    assertThat(transcription).contains(expectedKeyword);
 
-    System.out.println(response);
+    System.out.println(transcription);
   }
 }

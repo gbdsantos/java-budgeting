@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class ChatModelController {
   private final OpenAiChatModel openAiChatModel;
 
-  public ChatModelController(OpenAiChatModel openAichatModel) {
+  public ChatModelController(OpenAiChatModel openAiChatModel) {
     this.openAiChatModel = openAiChatModel;
   }
 
