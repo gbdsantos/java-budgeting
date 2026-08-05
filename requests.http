@@ -1,0 +1,7 @@
+@BASE_URL = http://localhost:8081
+
+### Transcribe audio
+POST {{BASE_URL}}/transcripte
+Content-Type: multipart/form-data
+
+file=@./src/test/resources/audio/recording-1.m4a
