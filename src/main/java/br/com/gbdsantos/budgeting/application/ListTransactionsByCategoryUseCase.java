@@ -2,6 +2,7 @@ package br.com.gbdsantos.budgeting.application;
 
 import java.util.List;
 
+import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Service;
 
 import br.com.gbdsantos.budgeting.application.output.TransactionOutput;
@@ -16,6 +17,10 @@ public class ListTransactionsByCategoryUseCase {
     this.transactionRepository = transactionRepository;
   }
 
+  @Tool(
+    description = "Lista transações financeiras por categoria",
+    name = "list-transactions-by-category"
+  )
   public List<TransactionOutput> execute(Category category) {
     return transactionRepository.findAllByCategory(category)
     .stream()

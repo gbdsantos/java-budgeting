@@ -1,5 +1,6 @@
 package br.com.gbdsantos.budgeting.application;
 
+import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Service;
 
 import br.com.gbdsantos.budgeting.application.input.PersistTransactionInput;
@@ -16,6 +17,7 @@ public class PersistTransactionUseCase {
     this.transactionRepository = transactionRepository;
   }
 
+  @Tool(name = "persist-transaction", description = "Persiste uma nova transação financeira")
   public Transaction execute(PersistTransactionInput input) {
     var transaction = transactionRepository.save(
       new Transaction(

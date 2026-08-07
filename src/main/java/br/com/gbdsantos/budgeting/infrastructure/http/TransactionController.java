@@ -1,19 +1,32 @@
 package br.com.gbdsantos.budgeting.infrastructure.http;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
 
+import org.springframework.ai.audio.transcription.TranscriptionModel;
+import org.springframework.ai.audio.tts.TextToSpeechModel;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import br.com.gbdsantos.budgeting.application.ListTransactionsByCategoryUseCase;
 import br.com.gbdsantos.budgeting.application.PersistTransactionUseCase;
 import br.com.gbdsantos.budgeting.domain.Category;
 import br.com.gbdsantos.budgeting.infrastructure.http.request.TransactionRequest;
-import br.com.gbdsantos.budgeting.infrastructure.http.response.TransactionReponse;
+import br.com.gbdsantos.budgeting.infrastructure.http.response.TransactionResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,17 +38,34 @@ public class TransactionController {
   private final PersistTransactionUseCase persistTransactionUseCase;
   private final ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase;
 
+  private final ChatClient chatClient;
+  private final TextToSpeechModel textToSpeechModel;
+  private final TranscriptionModel transcriptionModel;
+
   public TransactionController(
+    @Value("classpath:/prompts/system-message.st") Resource systemPrompt,
+    ChatClient.Builder chatClientBuilder,
     ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase,
-    PersistTransactionUseCase persistTransactionUseCase
-  ) {
+    PersistTransactionUseCase persistTransactionUseCase,
+    TextToSpeechModel textToSpeechModel,
+    TranscriptionModel transcriptionModel
+  ) throws IOException {
+    this.chatClient = chatClientBuilder
+      .defaultSystem(systemPrompt.getContentAsString(Charset.defaultCharset()))
+      .defaultTools(
+      listTransactionsByCategoryUseCase,
+      persistTransactionUseCase
+      )
+      .build();
     this.listTransactionsByCategoryUseCase = listTransactionsByCategoryUseCase;
     this.persistTransactionUseCase = persistTransactionUseCase;
+    this.transcriptionModel = transcriptionModel;
+    this.textToSpeechModel = textToSpeechModel;
   }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public TransactionReponse createTransaction(@RequestBody TransactionRequest request) {
+  public TransactionResponse createTransaction(@RequestBody TransactionRequest request) {
     var transaction = persistTransactionUseCase.execute(request.toInput());
 
     return TransactionResponse.from(transaction);
@@ -49,5 +79,23 @@ public class TransactionController {
         .map(TransactionResponse::from)
         .toList();
   }
-  
+
+    @PostMapping(value = "/ai", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = "audio/mp3")
+    ResponseEntity<Resource> transcribe(@RequestParam("file") MultipartFile file) {
+      var userMessage = transcriptionModel.transcribe(file.getResource());
+      var result = chatClient.prompt().user(userMessage).call().content();
+
+      byte[] audio = textToSpeechModel.call(result);
+      var resource = new ByteArrayResource(audio);
+
+      return ResponseEntity.ok()
+        .header(
+          HttpHeaders.CONTENT_DISPOSITION,
+          ContentDisposition.attachment()
+            .filename("audio.mp3")
+            .build()
+            .toString()
+        )
+        .body(resource);
+  }
 }
