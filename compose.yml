@@ -1,0 +1,21 @@
+services:
+  mysql-budgeting-database:
+    image: bitnami/mysql
+    environment:
+      - MYSQL_DATABASE=budgeting
+      - MYSQL_ROOT_PASSWORD=docker
+      - MYSQL_USER=docker
+      - MYSQL_PASSWORD=docker
+    ports:
+      - "3306:3306"
+    volumes:
+      - registration_data:/bitnami/mysql/data
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "-uroot", "-pdocker", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  registration_data:

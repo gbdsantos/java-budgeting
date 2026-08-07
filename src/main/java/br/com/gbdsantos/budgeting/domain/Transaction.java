@@ -1,7 +1,9 @@
 package br.com.gbdsantos.budgeting.domain;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+@AllArgsConstructor
 @Getter
 public class Transaction {
   private TransactionId id;
