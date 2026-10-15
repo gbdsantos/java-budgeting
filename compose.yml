@@ -1,6 +1,6 @@
 services:
   mysql-budgeting-database:
-    image: bitnami/mysql
+    image: mysql
     environment:
       - MYSQL_DATABASE=budgeting
       - MYSQL_ROOT_PASSWORD=docker
